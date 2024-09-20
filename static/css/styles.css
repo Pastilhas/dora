@@ -47,3 +47,14 @@ body {
 .ta-center {
     text-align: center;
 }
+
+.row {
+    display: flex;
+    align-items: center;
+}
+
+.arrow-icon {
+    height: 1em;
+    aspect-ratio: 1;
+    padding: 1em;
+}

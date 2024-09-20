@@ -1,55 +1,51 @@
-async function fetchDirectoryContents(path = '') {
-    try {
-        const response = await fetch(`/getdir/${path}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error("Could not fetch directory contents:", error);
+'use strict'
+
+let current_dir = '';
+
+const getdir = async (path = '') => {
+    const res = await fetch(`/getdir/${path}`);
+
+    if (!res.ok) {
+        console.error(`Failed to list directory: ${res.status} ${res.statusText}`);
         return null;
     }
+
+    return await res.json();
 }
 
-function updateUIWithDirectoryContents(data = []) {
-    data.sort((a, b) => a.type < b.type ? -1 : (a.type > b.type ? 1 : 0));
+const chdir = ({ path, entries }) => {
+    current_dir = path.slice(1)
+    document.querySelector('.breadcrumbs').textContent = path;
+
     const tbody = document.querySelector('.pure-table tbody');
-
-    data.forEach(it => {
-        const row = document.createElement('tr')
-        row.innerHTML = `
-            <td><a href="#" onclick="updateView('${it.name}', '${it.type}')">${it.name}</a></td>
-            <td class="ta-center">${it.type || ''}</td>
-            <td class="ta-right">${it.type == 'directory' ? '' : it.size}</td>
-            <td class="ta-center">${new Date((it.atime || 0) * 1000).toLocaleString()}</td>
-            <td class="ta-center">${new Date((it.mtime || 0) * 1000).toLocaleString()}</td>
-        `;
-        tbody.appendChild(row);
-    });
-
-    // const breadcrumbs = document.querySelector('.breadcrumbs');
-    // breadcrumbs.textContent = path.split('/').join(' > ');
+    tbody.innerHTML = '';
+    entries
+        .sort((a, b) => a.type < b.type ? -1 : (a.type > b.type ? 1 : 0))
+        .forEach(it => {
+            const row = document.createElement('tr')
+            row.innerHTML = `
+                <td><a href="#" onclick="updateView('${it.name}', '${it.type}')">${it.name}</a></td>
+                <td class="ta-center">${it.type || ''}</td>
+                <td class="ta-right">${it.type == 'directory' ? '' : it.size}</td>
+                <td class="ta-center">${new Date((it.atime || 0) * 1000).toLocaleString()}</td>
+                <td class="ta-center">${new Date((it.mtime || 0) * 1000).toLocaleString()}</td>
+            `;
+            tbody.appendChild(row);
+        });
 }
 
-async function updateView(name, type) {
+const updateView = async (name = '', type = '') => {
     if (type === 'directory') {
-        const currentPath = document.querySelector('.breadcrumbs').textContent.replace(/ > /g, '/');
-        const newPath = currentPath === '/' ? `/${name}` : `${currentPath}/${name}`;
-
-        const directoryContents = await fetchDirectoryContents(newPath);
-        if (directoryContents) {
-            updateUIWithDirectoryContents(directoryContents);
-        }
-    } else {
-        console.log(`Opening file: ${name} of type: ${type}`);
-        // Implement file opening logic here
+        const path = `${current_dir}/${name}`
+        const dir = await getdir(path);
+        dir && chdir(dir);
+        return;
     }
+
+    console.log(`Opening file: ${name} of type: ${type}`);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const initialContents = await fetchDirectoryContents('');
-    if (initialContents) {
-        updateUIWithDirectoryContents(initialContents);
-    }
+    const dir = await getdir(current_dir);
+    dir && chdir(dir);
 });
