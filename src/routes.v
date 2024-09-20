@@ -3,6 +3,11 @@ module main
 import os
 import veb
 
+struct Dir {
+	path    string
+	entries []map[string]string
+}
+
 fn stat_entry(path string) map[string]string {
 	mut obj := map[string]string{}
 
@@ -17,30 +22,29 @@ fn stat_entry(path string) map[string]string {
 	return obj
 }
 
-@['/getdir'; get]
-pub fn (mut app App) getdir(mut ctx Context) veb.Result {
-	p := os.home_dir()
+fn getdir(mut ctx Context, path string) veb.Result {
+	if os.is_dir(path) {
+		dir := os.ls(path) or { return ctx.not_found() }
+		abs := dir.map(os.join_path(path, it))
+		ets := abs.map(stat_entry)
 
-	if os.is_dir(p) {
-		dir := os.ls(p) or { return ctx.not_found() }
-		abs := dir.map(os.join_path(p, it))
-		res := abs.map(stat_entry)
+		res := Dir{
+			path:    path
+			entries: ets
+		}
+
 		return ctx.json(res)
 	}
 
 	return ctx.not_found()
 }
 
+@['/getdir'; get]
+pub fn (mut app App) getdir_home(mut ctx Context) veb.Result {
+	return getdir(mut ctx, '/')
+}
+
 @['/getdir/:path...'; get]
 pub fn (mut app App) getdir_path(mut ctx Context, path string) veb.Result {
-	p := os.join_path(os.home_dir(), path)
-
-	if os.is_dir(p) {
-		dir := os.ls(p) or { return ctx.not_found() }
-		abs := dir.map(os.join_path(p, it))
-		res := abs.map(stat_entry)
-		return ctx.json(res)
-	}
-
-	return ctx.not_found()
+	return getdir(mut ctx, '/${path}')
 }
