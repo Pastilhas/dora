@@ -36,13 +36,19 @@ const chdir = ({ path, entries }) => {
 
 const updateView = async (name = '', type = '') => {
     if (type === 'directory') {
-        const path = `${current_dir}/${name}`
-        const dir = await getdir(path);
+        const dir = await getdir(`${current_dir}/${name}`);
         dir && chdir(dir);
         return;
     }
 
     console.log(`Opening file: ${name} of type: ${type}`);
+}
+
+const moveup = async () => {
+    const last = current_dir.lastIndexOf('/');
+    const path = last > 0 ? current_dir.slice(0, last) : '';
+    const dir = await getdir(path);
+    dir && chdir(dir);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
