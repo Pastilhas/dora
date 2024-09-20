@@ -39,3 +39,11 @@ body {
     text-decoration: none;
     color: inherit;
 }
+
+.ta-right {
+    text-align: right;
+}
+
+.ta-center {
+    text-align: center;
+}

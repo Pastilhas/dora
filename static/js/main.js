@@ -1,6 +1,6 @@
-async function fetchDirectoryContents(path = "") {
+async function fetchDirectoryContents(path = '') {
     try {
-        const response = await fetch(`/getdir`);
+        const response = await fetch(`/getdir/${path}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -12,26 +12,24 @@ async function fetchDirectoryContents(path = "") {
     }
 }
 
-function updateUIWithDirectoryContents(data) {
-    if (!data) return;
+function updateUIWithDirectoryContents(data = []) {
+    data.sort((a, b) => a.type < b.type ? -1 : (a.type > b.type ? 1 : 0));
+    const tbody = document.querySelector('.pure-table tbody');
 
-    const tableBody = document.querySelector('.pure-table tbody');
-    tableBody.innerHTML = '';
-
-    data.forEach(item => {
-        const row = document.createElement('tr');
+    data.forEach(it => {
+        const row = document.createElement('tr')
         row.innerHTML = `
-            <td><a href="#" onclick="updateView('${item.name}', '${item.type}')">${item.name}</a></td>
-            <td>${item.type}</td>
-            <td>${item.size || '-'}</td>
-            <td>${item.accessTime}</td>
-            <td>${item.creationTime}</td>
+            <td><a href="#" onclick="updateView('${it.name}', '${it.type}')">${it.name}</a></td>
+            <td class="ta-center">${it.type || ''}</td>
+            <td class="ta-right">${it.type == 'directory' ? '' : it.size}</td>
+            <td class="ta-center">${new Date((it.atime || 0) * 1000).toLocaleString()}</td>
+            <td class="ta-center">${new Date((it.mtime || 0) * 1000).toLocaleString()}</td>
         `;
-        tableBody.appendChild(row);
+        tbody.appendChild(row);
     });
 
-    const breadcrumbs = document.querySelector('.breadcrumbs');
-    breadcrumbs.textContent = path.split('/').join(' > ');
+    // const breadcrumbs = document.querySelector('.breadcrumbs');
+    // breadcrumbs.textContent = path.split('/').join(' > ');
 }
 
 async function updateView(name, type) {
@@ -50,7 +48,7 @@ async function updateView(name, type) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const initialContents = await fetchDirectoryContents('/');
+    const initialContents = await fetchDirectoryContents('');
     if (initialContents) {
         updateUIWithDirectoryContents(initialContents);
     }
